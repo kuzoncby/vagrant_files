@@ -1,2 +1,6 @@
-# vagrant_files
-Vagrant files
+# Vagrant Files
+This is a collection about vagrant dev environment.
+
+License
+---
+MIT
