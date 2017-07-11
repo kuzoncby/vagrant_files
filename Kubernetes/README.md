@@ -1,5 +1,5 @@
 # Kubernetes
-This is a demo kubernetes with one master and one node.
+This is a demo kubernetes with one master and three node.
 
 ### How to run this demo
 
