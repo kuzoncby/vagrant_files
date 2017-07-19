@@ -1,0 +1,15 @@
+Host ceph-deploy
+   Hostname ceph-deploy
+   User ceph
+Host ceph-node-1
+   Hostname ceph-node-1
+   User ceph
+Host ceph-node-2
+   Hostname ceph-node-2
+   User ceph
+Host ceph-node-3
+   Hostname ceph-node-3
+   User ceph
+Host ceph-client
+   Hostname ceph-client
+   User ceph
