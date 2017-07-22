@@ -1,0 +1,70 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure("2") do |config|
+
+	config.vm.define "master" do |master|
+		master.vm.box = "centos/7"
+		master.vm.hostname = "openstack-master.example.com"
+		master.vm.network "public_network", ip: "192.168.1.35", bridge: "em1"
+		master.vm.network "private_network", ip: "192.168.73.50"
+		master.vm.provider "virtualbox" do |vb|
+			vb.cpus = "4"
+			vb.memory = "16384"
+			vb.name = "openstack-master"
+		end
+		master.vm.provision "file", source: "answer.txt", destination: "answer.txt"
+		master.vm.provision "file", source: "openstack.crt", destination: "openstack.crt"
+		master.vm.provision "file", source: "openstack.key", destination: "openstack.key"
+		master.vm.provision "shell", inline: <<-SHELL
+			cp openstack.crt /etc/pki/tls/certs/openstack.crt
+			cp openstack.key /etc/pki/tls/private/openstack.key
+		SHELL
+	end
+
+	config.vm.define "node1" do |node1|
+		node1.vm.box = "centos/7"
+		node1.vm.hostname = "openstack-node-1.example.com"
+		node1.vm.network "public_network", ip: "192.168.1.36", bridge: "em1"
+		node1.vm.network "private_network", ip: "192.168.73.51"
+		node1.vm.provider "virtualbox" do |vb|
+			vb.cpus = "4"
+			vb.memory = "4096"
+			vb.name = "openstack-node-1"
+		end
+	end
+
+
+	# Enable provisioning with a shell script. Additional provisioners such as
+	# Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
+	# documentation for more information about their specific syntax and use.
+	config.vm.provision "shell", inline: <<-SHELL
+        echo redhat | passwd root --stdin
+        yum update -y
+        yum install bash-completion net-tools vim centos-release-openstack-ocata epel-release -y
+        sed -i 's/#DefaultTimeoutStopSec=90s/DefaultTimeoutStopSec=10s/g' /etc/systemd/system.conf
+        yum makecache
+        echo "192.168.73.50    openstack-master.example.com" >> /etc/hosts
+        echo "192.168.73.51    openstack-node-1.example.com" >> /etc/hosts
+        echo "192.168.73.40    ceph-deploy ceph-deploy.example.com" >> /etc/hosts
+        echo "192.168.73.41    ceph-node-1 ceph-node-1.example.com" >> /etc/hosts
+        echo "192.168.73.42    ceph-node-2 ceph-node-2.example.com" >> /etc/hosts
+        echo "192.168.73.43    ceph-node-3 ceph-node-3.example.com" >> /etc/hosts
+        echo "192.168.73.44    ceph-client ceph-client.example.com" >> /etc/hosts
+        sed -i 's/SELINUX=enforcing/SELINUX=permissive/g' /etc/sysconfig/selinux
+        setenforce 0
+        yum install -y openstack-packstack
+        systemctl disable firewalld
+        systemctl stop firewalld
+        systemctl disable NetworkManager
+        systemctl stop NetworkManager
+        systemctl enable network
+        systemctl start network
+        sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+        systemctl restart sshd
+	SHELL
+end
