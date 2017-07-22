@@ -1,0 +1,51 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure("2") do |config|
+
+	config.vm.box = "centos/7"
+
+	config.vm.define "registry" do |registry|
+		registry.vm.hostname = "registry.example.com"
+		registry.vm.network "private_network", ip: "192.168.73.5"
+		registry.vm.provider "virtualbox" do |vb|
+			vb.cpus = "4"
+			vb.memory = "2048"
+			vb.name = "registry"
+		end
+	end
+
+
+	# Enable provisioning with a shell script. Additional provisioners such as
+	# Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
+	# documentation for more information about their specific syntax and use.
+	config.vm.provision "shell", inline: <<-SHELL
+        sudo echo redhat | passwd root --stdin
+        yum update -y
+        yum install bash-completion net-tools vim docker cockpit-* -y
+        sed -i 's/registry.access.redhat.com/2535e21f.m.daocloud.io/g' /etc/sysconfig/docker
+        sed -i 's/#ADD_REGISTRY/ADD_REGISTRY/g' /etc/sysconfig/docker
+        sed -i 's/# INSECURE_REGISTRY/INSECURE_REGISTRY/g' /etc/sysconfig/docker
+        sed -i 's/--insecure-registry/--insecure-registry registry.example.com/g' /etc/sysconfig/docker
+        echo "192.168.73.5     registry.example.com" >> /etc/hosts
+        echo "192.168.73.10    kube-master.example.com" >> /etc/hosts
+        echo "192.168.73.11    kube-node-1.example.com" >> /etc/hosts
+        echo "192.168.73.12    kube-node-2.example.com" >> /etc/hosts
+        echo "192.168.73.13    kube-node-3.example.com" >> /etc/hosts
+        echo "192.168.73.40    ceph-deploy ceph-deploy.example.com" >> /etc/hosts
+        echo "192.168.73.41    ceph-node-1 ceph-node-1.example.com" >> /etc/hosts
+        echo "192.168.73.42    ceph-node-2 ceph-node-2.example.com" >> /etc/hosts
+        echo "192.168.73.43    ceph-node-3 ceph-node-3.example.com" >> /etc/hosts
+        echo "192.168.73.44    ceph-client ceph-client.example.com" >> /etc/hosts
+        echo "192.168.73.50    openstack-master.example.com" >> /etc/hosts
+        echo "192.168.73.51    openstack-node-1.example.com" >> /etc/hosts
+        systemctl start docker
+        docker run -d -p 80:5000 --restart always --name registry registry
+        sudo systemctl start cockpit
+        sudo systemctl enable cockpit
+	SHELL
+end
