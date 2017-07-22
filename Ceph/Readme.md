@@ -2,46 +2,46 @@
 
 ![Ceph](http://ceph.com/wp-content/uploads/2016/07/Ceph_Logo_Stacked_RGB_120411_fa.png)
 
-# Environment
+# Topology
 
 Ceph Deploy
 
-| Name | Value |
+| Item | Value |
 | :---: | :---: |
-| hostname | ceph-deploy.example.com |
-| IP | 192.168.33.40 |
+| Hostname | ceph-deploy.example.com |
+| IP | 192.168.73.40 |
 
 Ceph Node 1
 
-| Name | Value |
+| Item | Value |
 | :---: | :---: |
-| hostname | ceph-node-1.example.com |
-| IP | 192.168.33.41 |
+| Hostname | ceph-node-1.example.com |
+| IP | 192.168.73.41 |
 
 Ceph Node 2
 
-| Name | Value |
+| Item | Value |
 | :---: | :---: |
-| hostname | ceph-node-2.example.com |
-| IP | 192.168.33.42 |
+| Hostname | ceph-node-2.example.com |
+| IP | 192.168.73.42 |
 
 Ceph Node 3
 
-| Name | Value |
+| Item | Value |
 | :---: | :---: |
-| hostname | ceph-node-3.example.com |
-| IP | 192.168.33.43 |
+| Hostname | ceph-node-3.example.com |
+| IP | 192.168.73.43 |
 
 Ceph Client
 
-| Name | Value |
+| Item | Value |
 | :---: | :---: |
-| hostname | ceph-client.example.com |
-| IP | 192.168.33.44 |
+| Hostname | ceph-client.example.com |
+| IP | 192.168.73.44 |
 
 # Vagrant
 
-Start machines 
+Launch machine
 
 ```bash
 vagrant up
@@ -54,21 +54,22 @@ Install Ceph
 su - ceph
 mkdir test-cluster
 cp /vagrant/ceph.sh .
-chmod +x ceph.sh
-./ceph.sh
+bash ceph.sh
 ```
 
 ## Client
 
+![stack](http://docs.ceph.com/docs/hammer/_images/stack.png)
+
 ### Use as Block Device
 
-SSH into client
+Login client
 
 ```bash
 vagrant ssh client
 ```
 
-Create disk
+Create rbd
 
 ```bash
 su - ceph
@@ -82,9 +83,9 @@ sudo mount /dev/rbd0 /mnt
 df -hT
 ```
 
-### RADOS
+### Use as File System
 
-Create MDS ( MetaData Server )
+Create MDS ( MetaData Server ) on `ceph-node-1`
 
 ```bash
 vagrant ssh deploy
@@ -105,7 +106,7 @@ ceph fs ls
 ceph mds stat
 ```
 
-Use file system
+Use CephFS
 
 ```bash
 vagrant ssh client
@@ -117,5 +118,5 @@ mount -t ceph ceph-node-1.example.com:6789:/ /mnt -o name=admin,secretfile=admin
 df -hT
 ```
 
-# Special thanks to
+# Special Thanks
 * [Server World](https://www.server-world.info/en/note?os=CentOS_7&p=ceph&f=1)
