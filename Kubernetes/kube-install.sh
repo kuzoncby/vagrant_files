@@ -1,10 +1,10 @@
-#!/bin/bash
-# Install required packages
+#!/usr/bin/env bash
+# Install docker etcd flannel kubernetes and cockpit
 sudo yum install docker -y
 sudo systemctl start docker
 sudo yum install kubernetes etcd flannel cockpit-* -y
 
-# Disable security software
+# Disable selinux and Firewalld when installation
 sudo setenforce 0
 sudo systemctl disable firewalld
 sudo systemctl stop firewalld
@@ -29,6 +29,7 @@ KUBE_LOG_LEVEL="--v=0"
 KUBE_ALLOW_PRIV="--allow-privileged=false"
 
 # How the replication controller and scheduler find the kube-apiserver
+# Use your own api-server url
 KUBE_MASTER="--master=http://kube-master.example.com:8080"
 EOF
 
@@ -65,6 +66,7 @@ KUBE_API_PORT="--port=8080"
 KUBELET_PORT="--kubelet-port=10250"
 
 # Comma separated list of nodes in the etcd cluster
+# Use your own etcd server url
 KUBE_ETCD_SERVERS="--etcd-servers=http://kube-master.example.com:2379"
 
 # Address range to use for services
@@ -85,6 +87,8 @@ sudo mv apiserver /etc/kubernetes/apiserver
 #   \ \_\   /\____\ \__/.\_\ \_\ \_\ \_\ \_\ \____\/\____\ \___,_\
 #    \/_/   \/____/\/__/\/_/\/_/\/_/\/_/\/_/\/____/\/____/\/__,_ /
 #
+
+# Create a subnet
 sudo systemctl start etcd
 sudo etcdctl mkdir /kube-centos/network
 sudo etcdctl mk /kube-centos/network/config "{ \"Network\": \"172.30.0.0/16\", \"SubnetLen\": 24, \"Backend\": { \"Type\": \"vxlan\" } }"
@@ -93,6 +97,7 @@ cat > flanneld <<EOF
 # Flanneld configuration options
 
 # etcd url location.  Point this to the server where etcd runs
+# Use your own etcd server url
 FLANNEL_ETCD_ENDPOINTS="http://kube-master.example.com:2379"
 
 # etcd config key.  This is the configuration key that flannel queries
@@ -125,6 +130,7 @@ KUBELET_PORT="--port=10250"
 KUBELET_HOSTNAME="--hostname-override=kube-node"
 
 # Location of the api-server
+# Use your own api-server url
 KUBELET_API_SERVER="--api-servers=http://kube-master.example.com:8080"
 
 # Add your own!
@@ -135,16 +141,26 @@ sudo mv kubelet /etc/kubernetes/kubelet
 
 sudo sed -i "s/kube-node/$(hostname)/g" /etc/kubernetes/kubelet
 
+sudo sed -i 's/registry.access.redhat.com/2535e21f.m.daocloud.io/g' /etc/sysconfig/docker
+sudo sed -i 's/#ADD_REGISTRY/ADD_REGISTRY/g' /etc/sysconfig/docker
+
+sudo sed -i 's/# INSECURE_REGISTRY/INSECURE_REGISTRY/g' /etc/sysconfig/docker
+sudo sed -i 's/--insecure-registry/--insecure-registry registry.example.com/g' /etc/sysconfig/docker
+
+sudo sed -i 's/# BLOCK_REGISTRY/BLOCK_REGISTRY/g' /etc/sysconfig/docker
+sudo sed -i 's/--block-registry/--block-registry public/g' /etc/sysconfig/docker
+
+# Start service at master or node
 if [[ $(hostname) == *"master"* ]]; then
 	for SERVICES in etcd kube-apiserver kube-controller-manager kube-scheduler flanneld; do
-		sudo systemctl restart $SERVICES
-		sudo systemctl enable $SERVICES
-		sudo systemctl status $SERVICES
+		sudo systemctl restart ${SERVICES}
+		sudo systemctl enable ${SERVICES}
+		sudo systemctl status ${SERVICES}
 	done
 else
 	for SERVICES in kube-proxy kubelet flanneld docker; do
-		sudo systemctl restart $SERVICES
-		sudo systemctl enable $SERVICES
-		sudo systemctl status $SERVICES
+		sudo systemctl restart ${SERVICES}
+		sudo systemctl enable ${SERVICES}
+		sudo systemctl status ${SERVICES}
 	done
 fi
