@@ -1,0 +1,67 @@
+# -*- mode: ruby -*
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+    config.vm.box = "centos-base"
+    config.vbguest.auto_update = false
+    config.vbguest.no_remote = true
+
+    config.vm.define "mongo-query-router" do |config|
+        config.vm.hostname = "mongo-query-router.example.com"
+        config.vm.network :private_network, ip: "192.168.73.20"
+        config.vm.provider "virtualbox" do |vb|
+            vb.cpus = "4"
+            vb.memory = "1024"
+            vb.name = "mongo-query-router"
+        end
+        config.vm.provision "shell", inline: <<-SHELL
+            cp /vagrant/mongo-query-router.yaml /etc/opt/rh/rh-mongodb32/mongod.conf
+	        sed -i "s/BIND_IP/$(ifconfig | grep 192 | awk '{print $2}')/g" /etc/opt/rh/rh-mongodb32/mongod.conf
+	    SHELL
+    end
+
+    (1..3).each do |i|
+        config.vm.define "mongo-config-#{i}" do |config|
+            config.vm.hostname = "mongo-config-#{i}.example.com"
+            config.vm.network :private_network, ip: "192.168.73.2#{i}"
+            config.vm.provider "virtualbox" do |vb|
+                vb.cpus = "4"
+                vb.memory = "1024"
+                vb.name = "mongo-config-#{i}"
+            end
+            config.vm.provision "shell", inline: <<-SHELL
+                cp /vagrant/mongo-config.yaml /etc/opt/rh/rh-mongodb32/mongod.conf
+                sed -i "s/BIND_IP/$(ifconfig | grep 192 | awk '{print $2}')/g" /etc/opt/rh/rh-mongodb32/mongod.conf
+            SHELL
+        end
+    end
+
+    (1..2).each do |i|
+        config.vm.define "mongo-shard-#{i}" do |config|
+            config.vm.hostname = "mongo-shard-#{i}.example.com"
+            config.vm.network :private_network, ip: "192.168.73.2#{i+3}"
+            config.vm.provider "virtualbox" do |vb|
+                vb.cpus = "4"
+                vb.memory = "1024"
+                vb.name = "mongo-shard-#{i}"
+            end
+            config.vm.provision "shell", inline: <<-SHELL
+                cp /vagrant/mongo-shards.yaml /etc/opt/rh/rh-mongodb32/mongod.conf
+                sed -i "s/BIND_IP/$(ifconfig | grep 192 | awk '{print $2}')/g" /etc/opt/rh/rh-mongodb32/mongod.conf
+            SHELL
+        end
+    end
+
+    config.vm.provision "file", source: "../hosts.txt", destination: "hosts.txt"
+
+	config.vm.provision "shell", inline: <<-SHELL
+	    cat /home/vagrant/hosts.txt >> /etc/hosts
+		yum install centos-release-scl-rh -y
+		yum-config-manager --enable rhel-server-rhscl-7-rpms
+		sed -i 's/mirror.centos.org/mirrors.aliyun.com/g' /etc/yum.repos.d/*.repo
+		yum install rh-mongodb32 -y
+		scl enable rh-mongodb32 bash
+		systemctl start rh-mongodb32-mongod
+	SHELL
+end

@@ -1,0 +1,35 @@
+# -*- mode: ruby -*
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+	config.vm.box = "centos/7"
+    config.vbguest.auto_update = true
+    config.vbguest.no_remote = true
+    config.ssh.insert_key = false
+
+	config.vm.define "base" do |base|
+		base.vm.hostname = "base.example.com"
+		base.vm.provider "virtualbox" do |vb|
+			vb.cpus = "4"
+			vb.memory = "1024"
+			vb.name = "base"
+		end
+		base.vm.synced_folder '.', '/vagrant', disabled: true
+	end
+
+	config.vm.provision "shell", inline: <<-SHELL
+		echo redhat | passwd root --stdin
+		yum update -y
+		yum install bash-completion net-tools vim epel-release -y
+		sed -i 's/#DefaultTimeoutStopSec=90s/DefaultTimeoutStopSec=10s/g' /etc/systemd/system.conf
+		yum makecache
+		yum install sshpass -y
+		sed -i 's/SELINUX=enforcing/SELINUX=permissive/g' /etc/sysconfig/selinux
+		setenforce 0
+		systemctl disable firewalld
+		systemctl stop firewalld
+		sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+		systemctl restart sshd
+	SHELL
+end

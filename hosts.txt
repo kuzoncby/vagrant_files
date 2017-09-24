@@ -1,0 +1,23 @@
+# Docker Registry
+192.168.73.5     registry registry.example.com
+# Kubernetes
+192.168.73.10    kube-master kube-master.example.com
+192.168.73.11    kube-node-1 kube-node-1.example.com
+192.168.73.12    kube-node-2 kube-node-2.example.com
+192.168.73.13    kube-node-3 kube-node-3.example.com
+# MongoDB
+192.168.73.20    mongo-query-router mongo-query-router.example.com
+192.168.73.21    mongo-config-1 mongo-config-1.example.com
+192.168.73.22    mongo-config-2 mongo-config-2.example.com
+192.168.73.23    mongo-config-3 mongo-config-3.example.com
+192.168.73.24    mongo-shard-1 mongo-shard-1.example.com
+192.168.73.25    mongo-shard-2 mongo-shard-2.example.com
+# Ceph
+192.168.73.40    ceph-deploy ceph-deploy.example.com
+192.168.73.41    ceph-node-1 ceph-node-1.example.com
+192.168.73.42    ceph-node-2 ceph-node-2.example.com
+192.168.73.43    ceph-node-3 ceph-node-3.example.com
+192.168.73.44    ceph-client ceph-client.example.com
+# OpenStack
+192.168.73.50    openstack-master.example.com
+192.168.73.51    openstack-node-1.example.com

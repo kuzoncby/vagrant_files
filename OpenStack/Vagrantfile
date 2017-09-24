@@ -10,7 +10,6 @@ Vagrant.configure("2") do |config|
 	config.vm.define "master" do |master|
 		master.vm.box = "centos/7"
 		master.vm.hostname = "openstack-master.example.com"
-		master.vm.network "public_network", ip: "192.168.1.35", bridge: "em1"
 		master.vm.network "private_network", ip: "192.168.73.50"
 		master.vm.provider "virtualbox" do |vb|
 			vb.cpus = "4"
@@ -26,10 +25,9 @@ Vagrant.configure("2") do |config|
 		SHELL
 	end
 
-	config.vm.define "node1" do |node1|
+	config.vm.define "node" do |node|
 		node1.vm.box = "centos/7"
-		node1.vm.hostname = "openstack-node-1.example.com"
-		node1.vm.network "public_network", ip: "192.168.1.36", bridge: "em1"
+		node1.vm.hostname = "openstack-node.example.com"
 		node1.vm.network "private_network", ip: "192.168.73.51"
 		node1.vm.provider "virtualbox" do |vb|
 			vb.cpus = "4"
@@ -38,10 +36,6 @@ Vagrant.configure("2") do |config|
 		end
 	end
 
-
-	# Enable provisioning with a shell script. Additional provisioners such as
-	# Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
-	# documentation for more information about their specific syntax and use.
 	config.vm.provision "shell", inline: <<-SHELL
         echo redhat | passwd root --stdin
         yum update -y
